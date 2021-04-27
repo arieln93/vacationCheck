@@ -8,11 +8,23 @@ app.listen(port, () => {
     console.log('app is listening on port', port)
 })
 app.get('/', (req, res) => {
-    console.log('dd')
     res.send('last check' + lastCheck)
 })
+app.get('/checkSMS', async (req, res) => {
+    const resp = await sendSMS('Check')
+    res.send(resp)
+})
 const sendSMS = async (text) => {
-    var client = new twilio("AC40dc8233547dc2aca2a408fa84d8543a", "bc06c4ac3996238bda08c992a2284103")
+    var client = new twilio(process.argv[2], process.argv[3])
+    const resp1 = await client.messages.create({
+        to: '+9720507890770',
+        from: '+13522898944',
+        body: text,
+    })
+    console.log(resp1)
+}
+const sendSMS2 = async (text) => {
+    var client = new twilio(process.argv[2], process.argv[3])
     const resp1 = await client.messages.create({
         to: '+9720507890770',
         from: '+13522898944',
@@ -39,6 +51,7 @@ const getDatesFromAPI = () => {
 }
 const checkDatesUpdate = async () => {
     const time = new Date()
+    lastCheck = time.toString()
     const desiredDate = "2021-04-30T00:00:00"
     console.log('check for dates update', time.toString())
     try {
@@ -46,7 +59,8 @@ const checkDatesUpdate = async () => {
         const datesArray = JSON.parse(resp).replace('[','').replace(']','').replace(/"/g,'').split(',')
         if (!datesArray.includes(desiredDate)){
             console.log('found!')
-            await sendSMS('2021-04-30 is available! go get your pass card to Sinai!')
+            lastCheck = 'found!'
+            await sendSMS2('2021-04-30 is available! go get your pass card to Sinai!')
             clearInterval(i)
             return
         } else {
@@ -56,9 +70,9 @@ const checkDatesUpdate = async () => {
     } catch (ex) {
         console.log(ex)
         clearInterval(i)
-        sendSMS('Error in script!')
+        sendSMS2('Error in script!')
         return
     }
 }
-//sendSMS("Hello! you've been subscribed to Get Sinai Updates! You'll get an SMS once the 2021-04-30 will be available. Meowwwwww")
+sendSMS("Hello! you've been subscribed to Get Sinai Updates! You'll get an SMS once the 2021-04-30 will be available. Meowwwwww")
 const i = setInterval(() => checkDatesUpdate(), 180000)
